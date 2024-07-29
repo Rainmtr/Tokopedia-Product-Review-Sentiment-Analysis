@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Page</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+        }
+        .header {
+            background-color: #6482AD;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header img {
+            height: 40px;
+        }
+        .main-content {
+            background-size: cover;
+            background-position: center;
+            height: calc(100vh - 70px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            background-color: #F5EDED;
+        }
+        .search-container {
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+            border-radius: 20px;
+            padding: 5px 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 50%;
+            max-width: 600px;
+            margin: 20px 0;
+        }
+        .search-container input[type="text"] {
+            border: none;
+            outline: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 20px;
+            font-size: 16px;
+        }
+        .news {
+            background: #E2DAD6;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .news-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .news-item:last-child {
+            margin-bottom: 0;
+        }
+        .news-item span {
+            color: black;
+        }
+        .weather {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            color: white;
+        }
+        .weather div {
+            margin: 0 10px;
+            text-align: center;
+        }
+        .weather img {
+            height: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="https://www.bing.com/sa/simg/bing_p_rr_teal_min.ico" alt="Logo">
+    </div>
+    <div class="main-content">
+        <div class="search-container">
+            <input type="text" placeholder="Search the web">
+        </div>
+        <div class="news">
+            <div class="news-item">
+                <span>test 1</span>
+            </div>
+            <div class="news-item">
+                <span>test 2</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
