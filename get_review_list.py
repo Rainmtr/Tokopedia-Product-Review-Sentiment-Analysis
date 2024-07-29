@@ -1,7 +1,6 @@
 import requests
 import json
 import urllib.parse
-import pandas as pd
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 
 # Common Function
@@ -97,7 +96,6 @@ productLink = input("Paste the product Link : ")
 shopDomain, productKey = extract_shopDomain_productKey(productLink)
 
 # ===== GET PRODUCT ID ======
-
 getProductIdAPI = 'https://gql.tokopedia.com/graphql/PDPGetLayoutQuery'
 getProductIdHeader = {
     'sec-ch-ua': '',
