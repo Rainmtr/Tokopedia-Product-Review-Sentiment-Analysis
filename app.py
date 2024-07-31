@@ -76,18 +76,38 @@ def getReviews(pages, product_id):
     messages = [review['message'].replace('\n', ' ').strip() for review in reviewList]
     return messages
 
+def chunk_reviews(reviews, max_length):
+    tokenizer = AutoTokenizer.from_pretrained('C:/Users/adria/product_sentiment_analysis/fined_tokenizer')
+    chunks = []
+    
+    for review in reviews:
+        encoded_review = tokenizer.encode(review, add_special_tokens=True)
+        for i in range(0, len(encoded_review), max_length - 2):  # Subtract 2 for special tokens
+            chunk = encoded_review[i:i + max_length - 2]
+            chunks.append(tokenizer.decode(chunk, skip_special_tokens=True))
+    
+    return chunks
+
 def analyze_sentiment(reviews):
-    fined_model_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_model'
-    tokenizer_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_tokenizer'
+    fined_model_path = 'C:/Users/adria/product_sentiment_analysis/fined_model'
+    tokenizer_path = 'C:/Users/adria/product_sentiment_analysis/fined_tokenizer'
 
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     model = AutoModelForSequenceClassification.from_pretrained(fined_model_path)
-
     sentiment_analysis = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
-    results = sentiment_analysis(reviews)
-
-    labels = [result['label'] for result in results]
-    scores = [result['score'] for result in results]
+    
+    # Define max token length for your model
+    max_token_length = 512
+    
+    review_chunks = chunk_reviews(reviews, max_token_length)
+    
+    all_results = []
+    for chunk in review_chunks:
+        results = sentiment_analysis(chunk)
+        all_results.extend(results)
+    
+    labels = [result['label'] for result in all_results]
+    scores = [result['score'] for result in all_results]
 
     reverse_label_mapping = {'LABEL_0': -1, 'LABEL_1': 0, 'LABEL_2': 1}
     mapped_labels = [reverse_label_mapping[label] for label in labels]
@@ -168,7 +188,8 @@ def process_link():
 
     summary = "Mostly Negative" if stats['negative_reviews'] > stats['positive_reviews'] else "Mostly Positive"
 
-    return redirect(url_for('home', result=True, summary=summary, total_reviews=total_reviews, positive_reviews=stats['positive_reviews'], negative_reviews=stats['negative_reviews']))
+    return redirect(url_for('home', result=True, summary=summary, total_reviews=stats['total_reviews'],
+                            positive_reviews=stats['positive_reviews'], negative_reviews=stats['negative_reviews']))
 
 if __name__ == '__main__':
     app.run(debug=True)
