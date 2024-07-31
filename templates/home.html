@@ -3,35 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Page</title>
+    <title>Sentiment Analysis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
-    <div class="header">
-        <img src="https://www.bing.com/sa/simg/bing_p_rr_teal_min.ico" alt="Logo">
-    </div>
-    <div class="main-content">
-        <div class="search-container">
-            <form action="{{ url_for('process_link') }}" method="POST">
-                <input type="text" name="tokopedia_link" placeholder="Paste Tokopedia link here">
-                <button type="submit">Submit</button>
+    <div class="container">
+        <div class="card" id="idle-state" style="display: {{ 'block' if not result else 'none' }};">
+            <form id="search-form" action="/process_link" method="POST">
+                <div class="input-group">
+                    <input type="text" name="tokopedia_link" id="tokopedia-link" placeholder="Enter Tokopedia Product Link here" class="search-input">
+                    <button type="submit" id="review-button">Review</button>
+                    <span class="search-icon"><i class="fas fa-search"></i></span>
+                </div>
             </form>
+            <p class="instruction">To get sentiment stats, paste the Tokopedia product link to above field</p>
+            <div id="loading" class="loading" style="display: none;"></div>
         </div>
-        <div class="news">
-            {% if result %}
-                <div class="news-item">
-                    <span>{{ result }}</span>
-                </div>
-            {% else %}
-                <div class="news-item">
-                    <span>test 1</span>
-                </div>
-                <div class="news-item">
-                    <span>test 2</span>
-                </div>
-            {% endif %}
+        
+        <div class="card" id="display-state" style="display: {{ 'none' if not result else 'block' }};">
+            <h2>PRODUCT SUMMARY</h2>
+            <div class="stats-container">
+                <div class="stat-box" style="background-color: #FFD9C9;">{{ summary }}</div>
+                <div class="stat-box" style="background-color: #FFF3C9;">{{ total_reviews }}<br>Total<br>Review</div>
+                <div class="stat-box" style="background-color: #E2FFD4;">{{ positive_reviews }}<br>Positive<br>Review</div>
+                <div class="stat-box" style="background-color: #FFD9C9;">{{ negative_reviews }}<br>Negative<br>Review</div>
+            </div>
+            <button id="reset-button">Return</button>
         </div>
     </div>
+    <script>
+        document.getElementById('search-form').addEventListener('submit', function(event) {
+            var searchField = document.getElementById('tokopedia-link').value;
+            if (!searchField) {
+                event.preventDefault();
+                alert("Must enter Tokopedia Product Link");
+            } else {
+                event.preventDefault(); // Prevent form from submitting to show loading animation
+                document.getElementById('loading').style.display = 'block';
+                document.querySelector('.input-group').style.display = 'none';
+                document.querySelector('.instruction').style.display = 'none';
+                setTimeout(function() {
+                    document.getElementById('search-form').submit();
+                }, 500); // Simulate loading
+            }
+        });
+
+        document.getElementById('reset-button').addEventListener('click', function() {
+            document.getElementById('display-state').style.display = 'none';
+            document.getElementById('idle-state').style.display = 'block';
+            document.querySelector('.input-group').style.display = 'flex';
+            document.querySelector('.instruction').style.display = 'block';
+            document.getElementById('tokopedia-link').value = '';
+        });
+    </script>
 </body>
 </html>

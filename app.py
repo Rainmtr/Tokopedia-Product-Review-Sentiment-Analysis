@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import requests
 import json
 import urllib.parse
@@ -77,8 +77,8 @@ def getReviews(pages, product_id):
     return messages
 
 def analyze_sentiment(reviews):
-    fined_model_path = 'C:/Users/adria/product_sentiment_analysis/fined_model'
-    tokenizer_path = 'C:/Users/adria/product_sentiment_analysis/fined_tokenizer'
+    fined_model_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_model'
+    tokenizer_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_tokenizer'
 
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     model = AutoModelForSequenceClassification.from_pretrained(fined_model_path)
@@ -111,7 +111,12 @@ def analyze_sentiment(reviews):
 
 @app.route('/')
 def home():
-    return render_template('home.html')
+    result = request.args.get('result')
+    summary = request.args.get('summary')
+    total_reviews = request.args.get('total_reviews')
+    positive_reviews = request.args.get('positive_reviews')
+    negative_reviews = request.args.get('negative_reviews')
+    return render_template('home.html', result=result, summary=summary, total_reviews=total_reviews, positive_reviews=positive_reviews, negative_reviews=negative_reviews)
 
 @app.route('/process_link', methods=['POST'])
 def process_link():
@@ -161,14 +166,9 @@ def process_link():
     reviewList = getReviews(pages, product_id)
     stats = analyze_sentiment(reviewList)
 
-    result = (
-        f"Product ID: {product_id}\n"
-        f"Total Reviews: {total_reviews}\n"
-        f"Positive Reviews: {stats['positive_reviews']} ({stats['positive_percentage']:.2f}%)\n"
-        f"Negative Reviews: {stats['negative_reviews']} ({stats['negative_percentage']:.2f}%)\n"
-    )
+    summary = "Mostly Negative" if stats['negative_reviews'] > stats['positive_reviews'] else "Mostly Positive"
 
-    return render_template('home.html', result=result)
+    return redirect(url_for('home', result=True, summary=summary, total_reviews=total_reviews, positive_reviews=stats['positive_reviews'], negative_reviews=stats['negative_reviews']))
 
 if __name__ == '__main__':
     app.run(debug=True)

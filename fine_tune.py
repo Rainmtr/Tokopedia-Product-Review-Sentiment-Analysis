@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support, con
 import numpy as np
 
 # Load the dataset
-df = pd.read_excel('sigma.xlsx')
+df = pd.read_excel('fine_tune_data.xlsx')
 
 # Remove trailing spaces from column names
 df.columns = df.columns.str.strip()
@@ -113,39 +113,17 @@ fined_model_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/
 tokenizer_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_tokenizer'
 
 trainer.save_model(fined_model_path)
-tokenizer.save_pretrained(tokenizer_path)
+tokenizer.save_model(tokenizer_path)
 
 print(f"Model saved to {fined_model_path}")
 print(f"Tokenizer saved to {tokenizer_path}")
 
-# # Evaluate the model
-# eval_results = trainer.evaluate()
-# print(f"Evaluation results: {eval_results}")
+# Evaluate the model
+eval_results = trainer.evaluate()
+print(f"Evaluation results: {eval_results}")
 
-# # Compute confusion matrix
-# preds = trainer.predict(val_dataset).predictions.argmax(-1)
-# cm = confusion_matrix(val_labels, preds)
-# print("Confusion Matrix:")
-# print(cm)
-
-# # Example prediction pipeline
-# tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
-# model = AutoModelForSequenceClassification.from_pretrained(fined_model_path)
-# sentiment_analysis = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
-
-# # Reverse label mapping
-# reverse_label_mapping = {0: -1, 1: 0, 2: 1}
-
-# # Continuous input loop for sentiment analysis
-# while True:
-#     # Get input from the user
-#     input_text = input("Enter a review (or type 'exit' to stop): ")
-#     if input_text.lower() == 'exit':
-#         break
-
-#     # Perform sentiment analysis on the input text
-#     result = sentiment_analysis(input_text)[0]
-#     original_label = reverse_label_mapping[int(result['label'].split('_')[1])]
-    
-#     # Print the sentiment analysis result
-#     print(f"Text: {input_text} | Sentiment: {original_label} | Score: {result['score']:.2f}")
+# Compute confusion matrix
+preds = trainer.predict(val_dataset).predictions.argmax(-1)
+cm = confusion_matrix(val_labels, preds)
+print("Confusion Matrix:")
+print(cm)

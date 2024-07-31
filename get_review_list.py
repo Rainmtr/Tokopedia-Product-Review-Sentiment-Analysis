@@ -1,3 +1,4 @@
+import pandas as pd
 import requests
 import json
 import urllib.parse
@@ -5,7 +6,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipe
 
 # Common Function
 def roundUp(number):
-    return int(number/50) + (number%50>0)
+    return int(number / 50) + (number % 50 > 0)
 
 def extract_shopDomain_productKey(url):
     parsed_url = urllib.parse.urlparse(url)
@@ -17,7 +18,7 @@ def extract_shopDomain_productKey(url):
         return shopDomain, productKey
     else:
         raise ValueError("Invalid Tokopedia product URL format")
-    
+
 def getReviewData(pages, product_id):
     return [
         {
@@ -32,21 +33,34 @@ def getReviewData(pages, product_id):
             "query": "query productReviewList($productID: String!, $page: Int!, $limit: Int!, $sortBy: String, $filterBy: String) {\n  productrevGetProductReviewList(productID: $productID, page: $page, limit: $limit, sortBy: $sortBy, filterBy: $filterBy) {\n    productID\n    list {\n      id: feedbackID\n      message\n      }\n    }\n}\n"
         }
     ]
-    
+
 def getReviews(pages, product_id):
     reviewList = []
     for i in range(pages):
-        reviewData = getReviewData(i+1, product_id)
+        reviewData = getReviewData(i + 1, product_id)
         reviewResponse = requests.post(getReviewAPI, headers=getReviewHeader, data=json.dumps(reviewData))
         reviewResponseData = reviewResponse.json()
         reviews = reviewResponseData[0]['data']['productrevGetProductReviewList']['list']
         reviewList.extend(reviews)
     # Extract only the messages
-    messages = [review['message'].replace('\n', ' ').strip() for review in reviewList] # delete if "id" is needed
+    messages = [review['message'].replace('\n', ' ').strip() for review in reviewList]
     return messages
 
-def analyze_sentiment(reviews):
+def chunk_text(text, tokenizer, chunk_size=512):
+    tokens = tokenizer.encode(text, add_special_tokens=False)
+    chunks = [tokens[i:i + chunk_size] for i in range(0, len(tokens), chunk_size)]
+    return chunks
 
+def analyze_sentiment_long_text(text, sentiment_analysis, tokenizer, chunk_size=512):
+    chunks = chunk_text(text, tokenizer, chunk_size)
+    results = []
+    for chunk in chunks:
+        decoded_chunk = tokenizer.decode(chunk, clean_up_tokenization_spaces=True)
+        result = sentiment_analysis([decoded_chunk])
+        results.extend(result)
+    return results
+
+def analyze_sentiment(reviews):
     fined_model_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_model'
     tokenizer_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_tokenizer'  
 
@@ -57,16 +71,19 @@ def analyze_sentiment(reviews):
     # Create sentiment analysis pipeline
     sentiment_analysis = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
     
-    # Perform sentiment analysis
-    results = sentiment_analysis(reviews)
+    # Perform sentiment analysis on long text
+    all_results = []
+    for review in reviews:
+        results = analyze_sentiment_long_text(review, sentiment_analysis, tokenizer)
+        all_results.extend(results)
     
     # Extract labels and scores
-    labels = [result['label'] for result in results]
-    scores = [result['score'] for result in results]
+    labels = [result['label'] for result in all_results]
+    scores = [result['score'] for result in all_results]
 
     # Reverse label mapping
     reverse_label_mapping = {'LABEL_0': -1, 'LABEL_1': 0, 'LABEL_2': 1}
-    mapped_labels = [reverse_label_mapping[(label)] for label in labels]
+    mapped_labels = [reverse_label_mapping[label] for label in labels]
     
     # Calculate basic statistics
     total_reviews = len(mapped_labels)
@@ -92,7 +109,7 @@ def analyze_sentiment(reviews):
     }
 
 # Get Product Link
-productLink = input("Paste the product Link : ")
+productLink = input("Paste the product Link: ")
 shopDomain, productKey = extract_shopDomain_productKey(productLink)
 
 # ===== GET PRODUCT ID ======
