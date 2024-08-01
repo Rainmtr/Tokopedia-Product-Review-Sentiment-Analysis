@@ -36,70 +36,67 @@ def getReviewData(pages, product_id):
 
 def getReviews(pages, product_id):
     reviewList = []
+    page = 1
     for i in range(pages):
         reviewData = getReviewData(i + 1, product_id)
         reviewResponse = requests.post(getReviewAPI, headers=getReviewHeader, data=json.dumps(reviewData))
         reviewResponseData = reviewResponse.json()
         reviews = reviewResponseData[0]['data']['productrevGetProductReviewList']['list']
+        print(f"Total Reviews: {page}")
+        page+=1
         reviewList.extend(reviews)
-    # Extract only the messages
     messages = [review['message'].replace('\n', ' ').strip() for review in reviewList]
     return messages
 
-def chunk_text(text, tokenizer, chunk_size=512):
-    tokens = tokenizer.encode(text, add_special_tokens=False)
-    chunks = [tokens[i:i + chunk_size] for i in range(0, len(tokens), chunk_size)]
+def chunk_reviews(reviews, max_length):
+    tokenizer = AutoTokenizer.from_pretrained('C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_tokenizer')
+    chunks = []
+    
+    for review in reviews:
+        encoded_review = tokenizer.encode(review, add_special_tokens=True)
+        for i in range(0, len(encoded_review), max_length - 2):  # Subtract 2 for special tokens
+            chunk = encoded_review[i:i + max_length - 2]
+            chunks.append(tokenizer.decode(chunk, skip_special_tokens=True))
+    
     return chunks
-
-def analyze_sentiment_long_text(text, sentiment_analysis, tokenizer, chunk_size=512):
-    chunks = chunk_text(text, tokenizer, chunk_size)
-    results = []
-    for chunk in chunks:
-        decoded_chunk = tokenizer.decode(chunk, clean_up_tokenization_spaces=True)
-        result = sentiment_analysis([decoded_chunk])
-        results.extend(result)
-    return results
 
 def analyze_sentiment(reviews):
     fined_model_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_model'
-    tokenizer_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_tokenizer'  
+    tokenizer_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_tokenizer'
 
-    # Load the tokenizer and model
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     model = AutoModelForSequenceClassification.from_pretrained(fined_model_path)
-    
-    # Create sentiment analysis pipeline
     sentiment_analysis = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
     
-    # Perform sentiment analysis on long text
+    # Define max token length for your model
+    max_token_length = 512
+    
+    review_chunks = chunk_reviews(reviews, max_token_length)
+    
     all_results = []
-    for review in reviews:
-        results = analyze_sentiment_long_text(review, sentiment_analysis, tokenizer)
+    for chunk in review_chunks:
+        results = sentiment_analysis(chunk)
         all_results.extend(results)
     
-    # Extract labels and scores
     labels = [result['label'] for result in all_results]
     scores = [result['score'] for result in all_results]
 
-    # Reverse label mapping
     reverse_label_mapping = {'LABEL_0': -1, 'LABEL_1': 0, 'LABEL_2': 1}
     mapped_labels = [reverse_label_mapping[label] for label in labels]
-    
-    # Calculate basic statistics
+
     total_reviews = len(mapped_labels)
     positive_reviews = mapped_labels.count(1)
     neutral_reviews = mapped_labels.count(0)
     negative_reviews = mapped_labels.count(-1)
-    
+
     positive_percentage = (positive_reviews / total_reviews) * 100
-    neutral_percentage = (neutral_reviews / total_reviews) * 100
     negative_percentage = (negative_reviews / total_reviews) * 100
-    
+
     # Print statistics
     print(f"Total Reviews: {total_reviews}")
     print(f"Positive Reviews: {positive_reviews} ({positive_percentage:.2f}%)")
     print(f"Negative Reviews: {negative_reviews} ({negative_percentage:.2f}%)")
-    
+
     return {
         "total_reviews": total_reviews,
         "positive_reviews": positive_reviews,

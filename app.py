@@ -77,7 +77,7 @@ def getReviews(pages, product_id):
     return messages
 
 def chunk_reviews(reviews, max_length):
-    tokenizer = AutoTokenizer.from_pretrained('C:/Users/adria/product_sentiment_analysis/fined_tokenizer')
+    tokenizer = AutoTokenizer.from_pretrained('C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_tokenizer')
     chunks = []
     
     for review in reviews:
@@ -89,8 +89,8 @@ def chunk_reviews(reviews, max_length):
     return chunks
 
 def analyze_sentiment(reviews):
-    fined_model_path = 'C:/Users/adria/product_sentiment_analysis/fined_model'
-    tokenizer_path = 'C:/Users/adria/product_sentiment_analysis/fined_tokenizer'
+    fined_model_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_model'
+    tokenizer_path = 'C:/Code/SentimentAnalysisProject/product_sentiment_analysis/fined_tokenizer'
 
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     model = AutoModelForSequenceClassification.from_pretrained(fined_model_path)
@@ -121,12 +121,34 @@ def analyze_sentiment(reviews):
     neutral_percentage = (neutral_reviews / total_reviews) * 100
     negative_percentage = (negative_reviews / total_reviews) * 100
 
+    # Determine summary and background color based on positive review percentage
+    if positive_percentage > 95:
+        summary = "Overwhelmingly Positive"
+        bg_color = "#96FFAD"
+    elif positive_percentage > 80:
+        summary = "Mostly Positive"
+        bg_color = "#B4FFC4"
+    elif positive_percentage > 70:
+        summary = "Positive"
+        bg_color = "#E2FFD4"
+    elif positive_percentage > 40:
+        summary = "Mixed"
+        bg_color = "#FFF3C9"
+    elif positive_percentage > 20:
+        summary = "Negative"
+        bg_color = "#FFD9C9"
+    else:
+        summary = "Do not buy"
+        bg_color = "#FFAFAF"
+
     return {
         "total_reviews": total_reviews,
         "positive_reviews": positive_reviews,
         "negative_reviews": negative_reviews,
         "positive_percentage": positive_percentage,
-        "negative_percentage": negative_percentage
+        "negative_percentage": negative_percentage,
+        "summary": summary,
+        "bg_color": bg_color
     }
 
 @app.route('/')
@@ -136,7 +158,8 @@ def home():
     total_reviews = request.args.get('total_reviews')
     positive_reviews = request.args.get('positive_reviews')
     negative_reviews = request.args.get('negative_reviews')
-    return render_template('home.html', result=result, summary=summary, total_reviews=total_reviews, positive_reviews=positive_reviews, negative_reviews=negative_reviews)
+    bg_color = request.args.get('bg_color')
+    return render_template('home.html', result=result, summary=summary, total_reviews=total_reviews, positive_reviews=positive_reviews, negative_reviews=negative_reviews, bg_color=bg_color)
 
 @app.route('/process_link', methods=['POST'])
 def process_link():
@@ -186,10 +209,8 @@ def process_link():
     reviewList = getReviews(pages, product_id)
     stats = analyze_sentiment(reviewList)
 
-    summary = "Mostly Negative" if stats['negative_reviews'] > stats['positive_reviews'] else "Mostly Positive"
-
-    return redirect(url_for('home', result=True, summary=summary, total_reviews=stats['total_reviews'],
-                            positive_reviews=stats['positive_reviews'], negative_reviews=stats['negative_reviews']))
+    return redirect(url_for('home', result=True, summary=stats['summary'], total_reviews=stats['total_reviews'],
+                            positive_reviews=stats['positive_reviews'], negative_reviews=stats['negative_reviews'], bg_color=stats['bg_color']))
 
 if __name__ == '__main__':
     app.run(debug=True)

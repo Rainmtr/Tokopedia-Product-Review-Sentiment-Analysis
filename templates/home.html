@@ -23,14 +23,18 @@
         </div>
         
         <div class="card" id="display-state" style="display: {{ 'none' if not result else 'block' }};">
-            <h2>PRODUCT SUMMARY</h2>
+            <h3 class="title-modal">PRODUCT SUMMARY</h3>
             <div class="stats-container">
-                <div class="stat-box" style="background-color: #FFD9C9;">{{ summary }}</div>
-                <div class="stat-box" style="background-color: #FFF3C9;">{{ total_reviews }}<br>Total<br>Review</div>
+                <div class="stat-box" style="background-color: {{ bg_color }};">{{ summary }}</div>
+                <div class="stat-box" style="background-color: #FFF3C9;">Total<br>{{ total_reviews }}<br>Review</div>
                 <div class="stat-box" style="background-color: #E2FFD4;">{{ positive_reviews }}<br>Positive<br>Review</div>
                 <div class="stat-box" style="background-color: #FFD9C9;">{{ negative_reviews }}<br>Negative<br>Review</div>
             </div>
-            <button id="reset-button">Return</button>
+            <button id="reset-button">Reset</button>
+        </div>
+
+        <div class="limitation-modal">
+            <p>Note: Due to API limitations, only up to 2500 reviews can be retrieved.</p>
         </div>
     </div>
     <script>
